@@ -16,10 +16,6 @@ hotels = [
     {"id": 7, "title": "Санкт-Петербург", "name": "spb"},
 ]
 
-def paginade_func(filtred_data: list,page: int, per_page: int) -> list:
-    data = filtred_data[:page*per_page]
-    return data
-
 
 @router.get('/')
 def get_hotels(
@@ -31,9 +27,9 @@ def get_hotels(
     if field.title: filtred =  [i for i in filtred if i['title'] == field.title]
     if field.name: filtred = [i for i in filtred if i['name'] == field.name]
     
-    paginated = paginade_func(filtred, field.page, field.per_page)
+    filtred = filtred[:field.page*field.per_page]
     
-    return paginated
+    return filtred
 
 @router.delete('/{hotel_id}')
 def delete_hotel(hotel_id: int):
