@@ -1,34 +1,39 @@
 from fastapi import Query, Body, Path, APIRouter
-from pydantic import BaseModel
+from shema.hotels_shema import Hotel, PatchHotel
 
 # tags используется, что бы переименовать в Документашке название группы ручек.
 router = APIRouter(prefix='/hotels', tags=['Отели'])
 
 
-class Hotel(BaseModel):
-    tile: str
-    name: str
-
-
-class PatchHotel(BaseModel):
-    title: str | None = None
-    name: str | None = None
-
-
 # Псевдо данные из БД
 hotels = [
-    {'id': 1, 'title': 'Sochi', 'name': 'voc'},
-    {'id': 2, 'title': 'Dubai', 'name': 'bok'},
+    {"id": 1, "title": "Sochi", "name": "sochi"},
+    {"id": 2, "title": "Дубай", "name": "dubai"},
+    {"id": 3, "title": "Мальдивы", "name": "maldivi"},
+    {"id": 4, "title": "Геленджик", "name": "gelendzhik"},
+    {"id": 5, "title": "Москва", "name": "moscow"},
+    {"id": 6, "title": "Казань", "name": "kazan"},
+    {"id": 7, "title": "Санкт-Петербург", "name": "spb"},
 ]
+
+def paginade_func(filtred_data: list,page: int, per_page: int) -> list:
+    data = filtred_data[:page*per_page]
+    return data
 
 
 @router.get('/')
 def get_hotels(
-    id: int | None = Query(None, description='Уникальный идентификатор'),
-    title: str | None = Query(None, description='Название отеля'),
-):
-    if id == None or title == None: return hotels # All return
-    return [hotel for hotel in hotels if hotel['title'] == title and hotel['id'] == id] # returns the result with the condition
+    field: Hotel = Query()
+):    
+    filtred = hotels
+    
+    if field.id: filtred = [i for i in filtred if i['id'] == field.id]
+    if field.title: filtred =  [i for i in filtred if i['title'] == field.title]
+    if field.name: filtred = [i for i in filtred if i['name'] == field.name]
+    
+    paginated = paginade_func(filtred, field.page, field.per_page)
+    
+    return paginated
 
 @router.delete('/{hotel_id}')
 def delete_hotel(hotel_id: int):
@@ -45,7 +50,7 @@ def create_hotel(create_field: Hotel):
     return 'Success'
 
 @router.put('/{id}') # Изменение всех параметров за исключение ID (возможно обработать только при предоставлении всех параметров)
-def put_hotels(id: int, update_field: Hotel = Body()):
+def put_hotels(id: int, update_field: Hotel):
     global hotels
     for enum, i in enumerate(hotels):
         if i['id'] == id:
@@ -55,8 +60,8 @@ def put_hotels(id: int, update_field: Hotel = Body()):
 
 @router.patch('/{id}')  # Изменение ограниченного кол-ва параметров (>= 1) за исключением ID
 def patch_hotels(
-    id: int = Path(description='ID'),
-    update_field: PatchHotel = Body()
+    id: int, #  = Path(description='ID')
+    update_field: PatchHotel
     ):
     global hotels
     for i in hotels:
