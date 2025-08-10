@@ -1,15 +1,15 @@
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy import text
+from sqlalchemy.orm import DeclarativeBase
+
 import asyncio
 
-from config import settings
+from src.config import settings
 
 engine = create_async_engine(settings.db_url)
 
-async def finc():
-    async with engine.begin() as conn:
-        res = await conn.execute(text('select version()'))
-        print(res.fetchone())
-        
-asyncio.run(finc())
+async_sessionmaker = async_sessionmaker(bind=engine, expire_on_commit=False)
 
+
+class Base(DeclarativeBase):
+    pass
