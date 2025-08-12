@@ -23,15 +23,9 @@ from src.api.route_hotels import router as router_hotels
 from src.config import settings
 
 
-app = FastAPI() # Главный обьект, без него не как
+app = FastAPI(title= 'Тестовое приложение')
 app.include_router(router_hotels) # Роутинг на отдельные маршруты | Деление трансопрта
 templates = Jinja2Templates(directory='templates') # html Вёрстка
-
-
-hotels = [
-    {'id': 1, 'title': 'Sochi', 'name': 'voc'},
-    {'id': 2, 'title': 'Dubai', 'name': 'bok'},
-]
 
 # Корневой маршрут
 @app.get('/', response_class=HTMLResponse)

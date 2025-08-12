@@ -1,26 +1,19 @@
 from fastapi import Query, Body, Path, APIRouter
-from shema.hotels_shema import Hotel, PatchHotel
+from database import async_session_maker
+from sqlalchemy import insert
+
+from models.hotels import HotelsOrm
+from shema.hotels_shema import *
+from docs.example import examples_post
+from docs.docs_api import desc
 
 # tags используется, что бы переименовать в Документашке название группы ручек.
 router = APIRouter(prefix='/hotels', tags=['Отели'])
 
 
-# Псевдо данные из БД
-hotels = [
-    {"id": 1, "title": "Sochi", "name": "sochi"},
-    {"id": 2, "title": "Дубай", "name": "dubai"},
-    {"id": 3, "title": "Мальдивы", "name": "maldivi"},
-    {"id": 4, "title": "Геленджик", "name": "gelendzhik"},
-    {"id": 5, "title": "Москва", "name": "moscow"},
-    {"id": 6, "title": "Казань", "name": "kazan"},
-    {"id": 7, "title": "Санкт-Петербург", "name": "spb"},
-]
 
-
-@router.get('/')
-def get_hotels(
-    field: Hotel = Query()
-):    
+@router.get('/', **desc)
+def get_hotels(field: GetHotel = Query()):    
     filtred = hotels
     
     if field.id: filtred = [i for i in filtred if i['id'] == field.id]
@@ -31,18 +24,13 @@ def get_hotels(
     
     return filtred
 
-@router.delete('/{hotel_id}')
-def delete_hotel(hotel_id: int):
-    global hotels
-    hotels = [hotel for hotel in hotels if hotel['id'] != hotel_id]
-    return {'status': 'OK'}
-
 @router.post('/') # Что бы получить данные из тела сообщения, строим из входящей переменной обьект Body / embed - делает из строки json (ключ - переменная / значение input)
-def create_hotel(create_field: Hotel):
-    global hotels
-    id_max = max([i['id'] for i in hotels]) + 1
-    hotel_dict = {'id': id_max, **create_field.model_dump()}
-    hotels.routerend(hotel_dict)
+async def create_hotel(create_field: PostHotel):
+    async with async_session_maker() as session:
+        # НА БУДУЩЕЕЕ - ВЛАДИСЛАВ СХЕМА ВЯЖЕТСЯ С МОДЕЛЬЮ В СТРОКЕ НИЖЕ | В инсерте указывается куда я пишу данные!!!!
+        add_hotels_stmt = insert(HotelsOrm).values(**create_field.model_dump())
+        await session.execute(add_hotels_stmt)
+        await session.commit()
     return 'Success'
 
 @router.put('/{id}') # Изменение всех параметров за исключение ID (возможно обработать только при предоставлении всех параметров)
@@ -64,3 +52,9 @@ def patch_hotels(
         if i['id'] == id:
             i.update(update_field.model_dump(exclude_unset=True))
             return 'Success'
+
+@router.delete('/{hotel_id}')
+def delete_hotel(hotel_id: int):
+    global hotels
+    hotels = [hotel for hotel in hotels if hotel['id'] != hotel_id]
+    return {'status': 'OK'}
