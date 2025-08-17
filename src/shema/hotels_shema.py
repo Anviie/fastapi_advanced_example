@@ -1,4 +1,6 @@
 from pydantic import BaseModel, Field
+from fastapi import Query
+
 
 class Hotel(BaseModel):
     id: int | None = None
@@ -21,11 +23,9 @@ class PostHotel(BaseModel):
     )
 
 class GetHotel(BaseModel):
-    id: int | None = None
-    title: str | None = None
-    location: str | None = None
-    page: int | None = Field(1, ge=1)
-    per_page: int | None = Field(5, ge=0, le=100)
+    id: int | None = Query(None, description='Айдишка')
+    title: str | None = Query(None, description='Название отеля')
+    location: str | None = Query(None, description='Адрес')
 
 
 class PatchHotel(BaseModel):

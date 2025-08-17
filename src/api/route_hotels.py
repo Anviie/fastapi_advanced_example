@@ -1,34 +1,41 @@
-from fastapi import Query, Body, Path, APIRouter
+from fastapi import Query, Body, Path, APIRouter, Depends
 from database import async_session_maker
-from sqlalchemy import insert
+from sqlalchemy import insert, select
 
 from models.hotels import HotelsOrm
 from shema.hotels_shema import *
-from docs.example import examples_post
-from docs.docs_api import desc
+from dependencies import PaginationParams
+from docs.docs_api import desc_get_hotels
 
 # tags используется, что бы переименовать в Документашке название группы ручек.
 router = APIRouter(prefix='/hotels', tags=['Отели'])
 
 
+@router.get('/', **desc_get_hotels)
+async def get_hotels(field: GetHotel = Depends(), pagination: PaginationParams = Depends()):
+    async with async_session_maker() as session:
+        query = select(HotelsOrm)
+        if field.id: query = query.filter_by(id == field.id)
+        if field.title: query = query.filter(HotelsOrm.title.like(f'%{field.title}%'))
+        if field.location: query = query.filter(HotelsOrm.location.like(f'%{field.location}%'))
+        query = (
+            query
+            .limit(pagination.per_page)
+            .offset(pagination.per_page * (pagination.page - 1))
+        )
+        result = await session.execute(query)
+        
+        hotels = result.scalars().all()
+        
+        # DEBUG SQL
+        print(query.compile(compile_kwargs={'literal_binds': True}))
+    
+    return hotels
 
-@router.get('/', **desc)
-def get_hotels(field: GetHotel = Query()):    
-    filtred = hotels
-    
-    if field.id: filtred = [i for i in filtred if i['id'] == field.id]
-    if field.title: filtred =  [i for i in filtred if i['title'] == field.title]
-    if field.name: filtred = [i for i in filtred if i['name'] == field.name]
-    
-    filtred = filtred[:field.page*field.per_page]
-    
-    return filtred
-
-@router.post('/') # Что бы получить данные из тела сообщения, строим из входящей переменной обьект Body / embed - делает из строки json (ключ - переменная / значение input)
+@router.post('/')
 async def create_hotel(create_field: PostHotel):
     async with async_session_maker() as session:
-        # НА БУДУЩЕЕЕ - ВЛАДИСЛАВ СХЕМА ВЯЖЕТСЯ С МОДЕЛЬЮ В СТРОКЕ НИЖЕ | В инсерте указывается куда я пишу данные!!!!
-        add_hotels_stmt = insert(HotelsOrm).values(**create_field.model_dump())
+        add_hotels_stmt = insert(HotelsOrm).values(**create_field.model_dump())        
         await session.execute(add_hotels_stmt)
         await session.commit()
     return 'Success'
