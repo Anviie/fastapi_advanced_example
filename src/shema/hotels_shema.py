@@ -10,17 +10,17 @@ class Hotel(BaseModel):
 
 class PostHotel(BaseModel):
     title: str = Field(
-        description='Название Отеля',
+        description="Официальное название отеля. Максимум 50 символов.",
         title="Название",
-        example='Olem',
+        example="Olem",
         max_length=50,
-    )
+    ) # pyright: ignore[reportCallIssue]
     location: str = Field(
-        description='Географическое положение',
-        title="Название",
-        example='Dubaui, street 1',
+        description="Город, улица, район. Максимум 100 символов.",
+        title="Адрес или локация",
+        example="Dubai, street 1",
         max_length=100,
-    )
+    ) # pyright: ignore[reportCallIssue]
 
 class GetHotel(BaseModel):
     id: int | None = Query(None, description='Айдишка')
