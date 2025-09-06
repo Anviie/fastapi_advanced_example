@@ -1,6 +1,6 @@
 from repositories.base import BaseRepository
 from models.hotels import HotelsOrm
-from sqlalchemy import select
+from sqlalchemy import select, insert
 
 class HotelsRepository(BaseRepository):
     model = HotelsOrm
@@ -30,5 +30,16 @@ class HotelsRepository(BaseRepository):
         # DEBUG SQL
         # print(query.compile(compile_kwargs={'literal_binds': True}))
         
-    async def post_data(self):
-        pass
+    async def add(
+        self,
+        title,
+        location
+    ):
+        query = (
+            insert(HotelsOrm)
+            .values(title=title, location=location)
+            .returning(HotelsOrm.id, HotelsOrm.title, HotelsOrm.location)
+        )
+        result = await self.session.execute(query)
+        return result.mappings().first()
+        

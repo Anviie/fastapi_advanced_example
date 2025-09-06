@@ -28,10 +28,13 @@ async def get_hotels(field: GetHotel = Depends(), pagination: PaginationParams =
 @router.post('/')
 async def create_hotel(create_field: PostHotel):
     async with async_session_maker() as session:
-        add_hotels_stmt = insert(HotelsOrm).values(**create_field.model_dump())        
-        await session.execute(add_hotels_stmt)
+        hotel = await HotelsRepository(session=session).add(
+            title=create_field.title,
+            location=create_field.location
+        )
         await session.commit()
-    return 'Success'
+    
+    return {'status': 'OK', 'data': hotel}
 
 @router.put('/{id}') # Изменение всех параметров за исключение ID (возможно обработать только при предоставлении всех параметров)
 def put_hotels(id: int, update_field: Hotel):
